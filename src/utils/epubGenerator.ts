@@ -1,0 +1,269 @@
+import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
+import type { EpubMetadata, EpubStyle, Chapter } from '../types';
+
+const generateUUID = () => {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+    const r = (Math.random() * 16) | 0,
+      v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+};
+
+const escapeXml = (unsafe: string) => {
+  return unsafe.replace(/[<>&'"]/g, (c) => {
+    switch (c) {
+      case '<': return '&lt;';
+      case '>': return '&gt;';
+      case '&': return '&amp;';
+      case '\'': return '&apos;';
+      case '"': return '&quot;';
+      default: return c;
+    }
+  });
+};
+
+export const generateEpub = async (
+  metadata: EpubMetadata,
+  style: EpubStyle,
+  chapters: Chapter[]
+): Promise<void> => {
+  const zip = new JSZip();
+  const uuid = generateUUID();
+
+  // mimetype
+  zip.file('mimetype', 'application/epub+zip');
+
+  // META-INF/container.xml
+  zip.folder('META-INF')?.file(
+    'container.xml',
+    `<?xml version="1.0"?>
+    <container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
+    <rootfiles>
+      <rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/>
+    </rootfiles>
+    </container>`
+  );
+
+  const oebps = zip.folder('OEBPS');
+  if (!oebps) return;
+
+  // Generate content.opf
+  const contentOpf = generateContentOpf(metadata, uuid, chapters);
+  oebps.file('content.opf', contentOpf);
+
+  // Generate toc.ncx
+  const tocNcx = generateTocNcx(metadata, uuid, chapters);
+  oebps.file('toc.ncx', tocNcx);
+
+  // Generate nav.xhtml
+  const navXhtml = generateNavXhtml(chapters);
+  oebps.file('nav.xhtml', navXhtml);
+
+  // stylesheet
+  const stylesheet = generateStylesheet(style);
+  oebps.file('stylesheet.css', stylesheet);
+
+  // Cover Image and cover.xhtml
+  if (metadata.coverImage) {
+    console.log(metadata.coverImage);
+
+    const coverData = metadata.coverImage.split(',')[1]; // Remove data:image/jpeg;base64,
+    const extension = metadata.coverImage.split(';')[0].split('/')[1];
+    oebps.folder('images')?.file(`cover.${extension}`, coverData, { base64: true });
+
+    // Generate cover.xhtml
+    const coverXhtml = generateCoverXhtml(extension);
+    oebps.file('cover.xhtml', coverXhtml);
+  }
+
+  // chapters
+  for (let i = 0; i < chapters.length; i++) {
+    const chapter = chapters[i];
+    const chapterHtml = await generateChapterHtml(chapter);
+    oebps.file(`chapter${i + 1}.xhtml`, chapterHtml);
+  }
+
+  // Generate and download
+  const blob = await zip.generateAsync({ type: 'blob', mimeType: 'application/epub+zip' });
+  const filename = `${metadata.title.replace(/[\/\\:*?"<>|]/g, '')}.epub`;
+  saveAs(blob, filename);
+};
+
+const generateContentOpf = (
+  metadata: EpubMetadata,
+  uuid: string,
+  chapters: Chapter[]
+) => {
+  let coverExtension = '';
+  if (metadata.coverImage) {
+    coverExtension = metadata.coverImage.split(';')[0].split('/')[1];
+  }
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+  <package xmlns="http://www.idpf.org/2007/opf" unique-identifier="BookId" version="3.0">
+    <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+      <dc:title>${escapeXml(metadata.title)}</dc:title>
+      <dc:creator>${escapeXml(metadata.author)}</dc:creator>
+      <dc:language>${metadata.language}</dc:language>
+      <dc:identifier id="BookId">urn:uuid:${uuid}</dc:identifier>
+      <meta property="dcterms:modified">${new Date().toISOString().split('.')[0]}Z</meta>
+      ${metadata.coverImage ? '<meta name="cover" content="cover-image" />' : ''}
+    </metadata>
+    <manifest>
+      <item id="toc" href="toc.ncx" media-type="application/x-dtbncx+xml"/>
+      <item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
+      <item id="style" href="stylesheet.css" media-type="text/css"/>
+      ${metadata.coverImage ? `<item id="cover-image" href="images/cover.${coverExtension}" media-type="image/${coverExtension}" properties="cover-image"/>` : ''}
+      ${metadata.coverImage ? `<item id="cover" href="cover.xhtml" media-type="application/xhtml+xml"/>` : ''}
+      ${chapters.map((_, i) => `<item id="chapter${i + 1}" href="chapter${i + 1}.xhtml" media-type="application/xhtml+xml"/>`).join('\n    ')}
+    </manifest>
+    <spine toc="toc">
+      ${metadata.coverImage ? `<itemref idref="cover"/>` : ''}
+      <itemref idref="nav"/>
+      ${chapters.map((_, i) => `<itemref idref="chapter${i + 1}"/>`).join('\n    ')}
+    </spine>
+  </package>`;
+};
+
+const generateTocNcx = (
+  metadata: EpubMetadata,
+  uuid: string,
+  chapters: Chapter[]
+) => {
+  return `<?xml version="1.0" encoding="UTF-8"?>
+  <ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1">
+    <head>
+      <meta name="dtb:uid" content="urn:uuid:${uuid}"/>
+      <meta name="dtb:depth" content="1"/>
+      <meta name="dtb:totalPageCount" content="0"/>
+      <meta name="dtb:maxPageNumber" content="0"/>
+    </head>
+    <docTitle>
+      <text>${escapeXml(metadata.title)}</text>
+    </docTitle>
+    <navMap>
+      ${chapters.map((chapter, i) => `
+        <navPoint id="navPoint-${i + 1}" playOrder="${i + 1}">
+          <navLabel>
+            <text>${escapeXml(chapter.title || `Chapter ${i + 1}`)}</text>
+          </navLabel>
+          <content src="chapter${i + 1}.xhtml"/>
+        </navPoint>`).join('')}
+    </navMap>
+  </ncx>`;
+};
+
+const generateNavXhtml = (chapters: Chapter[]) => {
+  return `<?xml version="1.0" encoding="UTF-8"?>
+  <!DOCTYPE html>
+  <html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops">
+    <head>
+      <title>nav</title>
+    </head>
+    <body>
+      <nav epub:type="toc" id="toc">
+        <h1>목차</h1>
+        <ol>
+          ${chapters.map((chapter, i) => `<li><a href="chapter${i + 1}.xhtml">${escapeXml(chapter.title || `Chapter ${i + 1}`)}</a></li>`).join('\n      ')}
+        </ol>
+      </nav>
+    </body>
+  </html>`;
+};
+
+const generateStylesheet = (style: EpubStyle) => {
+  return `body {
+    font-size: ${style.fontSize}px;
+    line-height: ${style.lineHeight / 100};
+    padding: ${style.margin.top}% ${style.margin.right}% ${style.margin.bottom}% ${style.margin.left}%;
+    word-break: break-all;
+  }
+  blockquote {
+    border-left: 0.2em solid gray;
+    margin-left: 1em;
+    padding-left: 1em;
+  }
+  blockquote p {
+    text-indent: 0;
+  }
+  p {
+    margin: 0;
+    margin-bottom: ${style.paragraphSpacing / 100}em;
+    text-indent: ${style.indentation ? '2em' : '0'};
+  }
+  h1 {
+    font-size: 1.5em;
+  }
+  h2 {
+    font-size: 1.25em;
+  }
+  h3 {
+    font-size: 1.125em;
+  }
+  h4 {
+    font-size: 1em;
+  }
+  img {
+    max-width: 100%;
+    text-align: center;
+  }
+  pre {
+    border: 1px solid gray;
+    word-wrap: break-word;
+    padding: 0.5em;
+  }
+  code {
+    background-color: #f8f8f8;
+  }
+  table, th, td {
+    border: 1px solid;
+  }
+  th, td {
+    padding: 0.2em;
+    vertical-align: middle;
+  }
+`;
+};
+
+const generateCoverXhtml = (extension: string) => {
+  return `<?xml version="1.0" encoding="UTF-8"?>
+  <!DOCTYPE html>
+  <html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+      <title></title>
+      <style>
+        body {
+          margin: 0;
+          padding: 0;
+          text-align: center;
+        }
+        img {
+          max-width: 100%;
+          max-height: 100vh;
+          margin: 0;
+        }
+      </style>
+    </head>
+    <body>
+      <img src="images/cover.${extension}" alt="Cover Image"/>
+    </body>
+  </html>`;
+};
+
+const generateChapterHtml = async (chapter: Chapter) => {
+  let content = chapter.html || '';
+  content = content.replace(/<br>/g, '<br/>');
+
+  return `<?xml version="1.0" encoding="utf-8"?>
+  <!DOCTYPE html>
+  <html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops">
+    <head>
+      <title></title>
+      <link rel="stylesheet" type="text/css" href="stylesheet.css"/>
+    </head>
+    <body>
+      ${content}
+    </body>
+  </html>`;
+};

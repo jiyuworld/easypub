@@ -1,0 +1,125 @@
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-md) var(--spacing-xl);
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--color-border);
+    position: relative;
+    z-index: var(--z-sticky);
+}
+
+.left {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.menuButton {
+    display: none;
+    padding: var(--spacing-sm);
+    border-radius: var(--radius-md);
+    color: var(--color-text-secondary);
+    transition: all var(--transition-base);
+}
+
+.menuButton:hover {
+    background: var(--color-bg-tertiary);
+    color: var(--color-primary);
+}
+
+.title {
+    font-size: var(--font-size-2xl);
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -0.02em;
+}
+
+.actions {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+
+.button {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    border-radius: var(--radius-md);
+    font-weight: 500;
+    transition: all var(--transition-base);
+    position: relative;
+    overflow: hidden;
+}
+
+.button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+    opacity: 0;
+    transition: opacity var(--transition-base);
+    z-index: -1;
+}
+
+.button:hover::before {
+    opacity: 1;
+}
+
+.previewButton {
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+}
+
+.previewButton:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+.previewButton.active {
+    background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+    border-color: transparent;
+    color: white;
+}
+
+.exportButton {
+    background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+    color: white;
+    box-shadow: 0 4px 12px hsla(250, 70%, 60%, 0.3);
+}
+
+.exportButton:hover {
+    box-shadow: 0 6px 16px hsla(250, 70%, 60%, 0.4);
+    transform: translateY(-1px);
+}
+
+@media (max-width: 768px) {
+    .header {
+        padding: var(--spacing-md);
+    }
+
+    .menuButton {
+        display: flex;
+    }
+
+    .title {
+        font-size: var(--font-size-xl);
+    }
+
+    .button {
+        padding: var(--spacing-sm) var(--spacing-md);
+        font-size: var(--font-size-sm);
+    }
+
+    .buttonText {
+        display: none;
+    }
+}

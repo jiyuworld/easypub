@@ -1,0 +1,43 @@
+.app {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.layout {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+    position: relative;
+}
+
+.content {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+}
+
+.overlay {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .overlay {
+        display: block;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: calc(var(--z-modal) - 1);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity var(--transition-base);
+    }
+
+    .overlay.visible {
+        opacity: 1;
+        pointer-events: auto;
+    }
+}
