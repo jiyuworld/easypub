@@ -13,11 +13,12 @@ export const Header: React.FC = () => {
         metadata,
         style,
         chapters,
+        images,
     } = useEpub();
 
     const handleExport = async () => {
         try {
-            await generateEpub(metadata, style, chapters);
+            await generateEpub(metadata, style, chapters, images);
         } catch (error) {
             console.error('Failed to generate EPUB:', error);
             alert('EPUB 생성에 실패했습니다.');

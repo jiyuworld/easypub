@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { BookText, BookOpenText, GripVertical, Trash2, Plus, List, X } from 'lucide-react';
+import { BookText, BookOpenText, GripVertical, Trash2, Plus, List, X, Image as ImageIcon } from 'lucide-react';
 import { useEpub } from '../../context/EpubContext';
 import { AddChapterModal } from '../Chapters/AddChapterModal';
 import { ConfirmModal } from '../common/ConfirmModal';
+import { ImageManagerModal } from '../ImageManager/ImageManagerModal';
 import styles from './Sidebar.module.css';
 
 export const Sidebar: React.FC = () => {
@@ -18,6 +19,7 @@ export const Sidebar: React.FC = () => {
         reorderChapters,
     } = useEpub();
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [isImageManagerOpen, setIsImageManagerOpen] = useState(false);
     const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
     const [draggedChapterIndex, setDraggedChapterIndex] = useState<number | null>(null);
 
@@ -125,9 +127,20 @@ export const Sidebar: React.FC = () => {
                         ))}
                     </ul>
                 </div>
+
+                <div className={styles.footer}>
+                    <button
+                        className={styles.imageManagerButton}
+                        onClick={() => setIsImageManagerOpen(true)}
+                    >
+                        <ImageIcon size={18} />
+                        이미지 관리
+                    </button>
+                </div>
             </aside>
 
             {isAddModalOpen && <AddChapterModal onClose={() => setIsAddModalOpen(false)} />}
+            {isImageManagerOpen && <ImageManagerModal onClose={() => setIsImageManagerOpen(false)} />}
 
             <ConfirmModal
                 isOpen={deleteConfirmId !== null}

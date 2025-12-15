@@ -1,6 +1,7 @@
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
-import type { EpubMetadata, EpubStyle, Chapter } from '../types';
+import type { EpubMetadata, EpubStyle, Chapter, ImageItem } from '../types';
+import { generateStylesheet } from './styleGenerator';
 
 const generateUUID = () => {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
@@ -26,7 +27,8 @@ const escapeXml = (unsafe: string) => {
 export const generateEpub = async (
   metadata: EpubMetadata,
   style: EpubStyle,
-  chapters: Chapter[]
+  chapters: Chapter[],
+  images: ImageItem[]
 ): Promise<void> => {
   const zip = new JSZip();
   const uuid = generateUUID();
@@ -48,8 +50,19 @@ export const generateEpub = async (
   const oebps = zip.folder('OEBPS');
   if (!oebps) return;
 
+  // Images
+  if (images && images.length > 0) {
+    const imagesFolder = oebps.folder('images');
+    if (imagesFolder) {
+      images.forEach(image => {
+        const extension = image.blob.type.split('/')[1];
+        imagesFolder.file(`${image.id}.${extension}`, image.blob);
+      });
+    }
+  }
+
   // Generate content.opf
-  const contentOpf = generateContentOpf(metadata, uuid, chapters);
+  const contentOpf = generateContentOpf(metadata, uuid, chapters, images);
   oebps.file('content.opf', contentOpf);
 
   // Generate toc.ncx
@@ -80,7 +93,7 @@ export const generateEpub = async (
   // chapters
   for (let i = 0; i < chapters.length; i++) {
     const chapter = chapters[i];
-    const chapterHtml = await generateChapterHtml(chapter);
+    const chapterHtml = await generateChapterHtml(chapter, images);
     oebps.file(`chapter${i + 1}.xhtml`, chapterHtml);
   }
 
@@ -93,7 +106,8 @@ export const generateEpub = async (
 const generateContentOpf = (
   metadata: EpubMetadata,
   uuid: string,
-  chapters: Chapter[]
+  chapters: Chapter[],
+  images: ImageItem[]
 ) => {
   let coverExtension = '';
   if (metadata.coverImage) {
@@ -116,6 +130,10 @@ const generateContentOpf = (
       <item id="style" href="stylesheet.css" media-type="text/css"/>
       ${metadata.coverImage ? `<item id="cover-image" href="images/cover.${coverExtension}" media-type="image/${coverExtension}" properties="cover-image"/>` : ''}
       ${metadata.coverImage ? `<item id="cover" href="cover.xhtml" media-type="application/xhtml+xml"/>` : ''}
+      ${images.map(img => {
+    const extension = img.blob.type.split('/')[1];
+    return `<item id="${img.id}" href="images/${img.id}.${extension}" media-type="${img.blob.type}"/>`;
+  }).join('\n    ')}
       ${chapters.map((_, i) => `<item id="chapter${i + 1}" href="chapter${i + 1}.xhtml" media-type="application/xhtml+xml"/>`).join('\n    ')}
     </manifest>
     <spine toc="toc">
@@ -172,59 +190,7 @@ const generateNavXhtml = (chapters: Chapter[]) => {
   </html>`;
 };
 
-const generateStylesheet = (style: EpubStyle) => {
-  return `body {
-    font-size: ${style.fontSize}px;
-    line-height: ${style.lineHeight / 100};
-    padding: ${style.margin.top}% ${style.margin.right}% ${style.margin.bottom}% ${style.margin.left}%;
-    word-break: break-all;
-  }
-  blockquote {
-    border-left: 0.2em solid gray;
-    margin-left: 1em;
-    padding-left: 1em;
-  }
-  blockquote p {
-    text-indent: 0;
-  }
-  p {
-    margin: 0;
-    margin-bottom: ${style.paragraphSpacing / 100}em;
-    text-indent: ${style.indentation ? '2em' : '0'};
-  }
-  h1 {
-    font-size: 1.5em;
-  }
-  h2 {
-    font-size: 1.25em;
-  }
-  h3 {
-    font-size: 1.125em;
-  }
-  h4 {
-    font-size: 1em;
-  }
-  img {
-    max-width: 100%;
-    text-align: center;
-  }
-  pre {
-    border: 1px solid gray;
-    word-wrap: break-word;
-    padding: 0.5em;
-  }
-  code {
-    background-color: #f8f8f8;
-  }
-  table, th, td {
-    border: 1px solid;
-  }
-  th, td {
-    padding: 0.2em;
-    vertical-align: middle;
-  }
-`;
-};
+
 
 const generateCoverXhtml = (extension: string) => {
   return `<?xml version="1.0" encoding="UTF-8"?>
@@ -251,8 +217,36 @@ const generateCoverXhtml = (extension: string) => {
   </html>`;
 };
 
-const generateChapterHtml = async (chapter: Chapter) => {
+const generateChapterHtml = async (chapter: Chapter, images: ImageItem[]) => {
   let content = chapter.html || '';
+
+  if (images && images.length > 0) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(content, 'text/html');
+    const imgTags = doc.querySelectorAll('img');
+
+    let modified = false;
+    imgTags.forEach(img => {
+      const imageId = img.getAttribute('data-image-id');
+      if (imageId) {
+        const image = images.find(i => i.id === imageId);
+        if (image) {
+          const extension = image.blob.type.split('/')[1];
+          img.setAttribute('src', `images/${image.id}.${extension}`);
+          img.removeAttribute('data-image-id');
+          modified = true;
+        }
+      }
+    });
+
+    if (modified) {
+      const serializer = new XMLSerializer();
+      content = Array.from(doc.body.childNodes)
+        .map(node => serializer.serializeToString(node))
+        .join('');
+    }
+  }
+
   content = content.replace(/<br>/g, '<br/>');
 
   return `<?xml version="1.0" encoding="utf-8"?>

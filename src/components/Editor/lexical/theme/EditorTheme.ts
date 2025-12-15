@@ -22,7 +22,6 @@ const theme: EditorThemeClasses = {
         ul: 'editor-list-ul',
         listitem: 'editor-listitem',
     },
-    image: 'editor-image',
     link: 'editor-link',
     text: {
         bold: 'editor-text-bold',

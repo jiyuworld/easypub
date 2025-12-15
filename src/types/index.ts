@@ -46,3 +46,10 @@ export interface PreviewSettings {
 
 // View Mode
 export type ViewMode = 'editor' | 'metadata' | 'style' | 'toc';
+
+// Image Item
+export interface ImageItem {
+    id: string;
+    blob: Blob;
+    url: string;
+}

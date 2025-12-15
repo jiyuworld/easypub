@@ -39,6 +39,7 @@ import {
   $isTextNode,
   type LexicalNode,
 } from 'lexical';
+import { $createImageNode, $isImageNode, ImageNode } from '../../nodes/ImageNode/ImageNode';
 
 export const HR: ElementTransformer = {
   dependencies: [HorizontalRuleNode],
@@ -57,6 +58,52 @@ export const HR: ElementTransformer = {
     }
 
     line.selectNext();
+  },
+  type: 'element',
+};
+
+export const IMAGE: ElementTransformer = {
+  dependencies: [ImageNode],
+  export: (node) => {
+    if (!$isImageNode(node)) {
+      return null;
+    }
+
+    console.log(node.getSrc());
+
+
+    return `<img src="${node.getSrc()}" data-image-id="${node.getId()}" alt="${node.getAltText()}" />`;
+  },
+  regExp: /<img\s+.*?data-image-id=["'][^"']*["'].*?>/i,
+  replace: (parentNode, _1, _2, isImport) => {
+    const htmlString = _2[0];
+
+    const imgTagSrc = htmlString.match(/src=["']([^"']+)["']/);
+    const src = imgTagSrc ? imgTagSrc[1] : null;
+
+    const imgTagId = htmlString.match(/data-image-id=["']([^"']+)["']/);
+    const imageId = imgTagId ? imgTagId[1] : null;
+
+    const altMatch = htmlString.match(/alt=["']([^"']*)["']/);
+    const altText = altMatch ? altMatch[1] : '';
+
+    if (!src || !imageId) {
+      return;
+    }
+
+    const imageNode = $createImageNode({
+      src,
+      imageId,
+      altText,
+    });
+
+    if (isImport || parentNode.getNextSibling() != null) {
+      parentNode.replace(imageNode);
+    } else {
+      parentNode.insertBefore(imageNode);
+    }
+
+    imageNode.selectNext();
   },
   type: 'element',
 };
@@ -222,6 +269,7 @@ const mapToTableCells = (textContent: string): Array<TableCellNode> | null => {
 export const PLAYGROUND_TRANSFORMERS: Array<Transformer> = [
   TABLE,
   HR,
+  IMAGE,
   CHECK_LIST,
   ...ELEMENT_TRANSFORMERS,
   ...MULTILINE_ELEMENT_TRANSFORMERS,

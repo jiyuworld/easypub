@@ -4,6 +4,7 @@ import { CodeNode } from '@lexical/code';
 import { TableNode, TableCellNode, TableRowNode } from '@lexical/table';
 import { LinkNode } from '@lexical/link';
 import { HorizontalRuleNode } from '@lexical/react/LexicalHorizontalRuleNode';
+import { ImageNode } from './ImageNode/ImageNode';
 
 export const nodes = [
     HeadingNode,
@@ -15,5 +16,6 @@ export const nodes = [
     TableCellNode,
     TableRowNode,
     LinkNode,
-    HorizontalRuleNode
+    HorizontalRuleNode,
+    ImageNode
 ];

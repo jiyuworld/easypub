@@ -7,6 +7,7 @@ import type {
     EditorMode,
     PreviewSettings,
     ViewMode,
+    ImageItem,
 } from '../types';
 
 interface EpubContextType {
@@ -44,6 +45,11 @@ interface EpubContextType {
     // Sidebar
     sidebarOpen: boolean;
     setSidebarOpen: (open: boolean) => void;
+
+    // Images
+    images: ImageItem[];
+    addImage: (file: File) => void;
+    deleteImage: (id: string) => void;
 }
 
 const EpubContext = createContext<EpubContextType | undefined>(undefined);
@@ -92,6 +98,21 @@ export const EpubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         height: 667,
         preset: 'mobile',
     });
+
+    const [images, setImages] = useState<ImageItem[]>([]);
+
+    const addImage = (file: File) => {
+        const newImage: ImageItem = {
+            id: `img-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            blob: file,
+            url: URL.createObjectURL(file),
+        };
+        setImages(prev => [...prev, newImage]);
+    };
+
+    const deleteImage = (id: string) => {
+        setImages(prev => prev.filter(img => img.id !== id));
+    };
 
     const addChapter = (chapter: Omit<Chapter, 'id' | 'order'>) => {
         const newChapter: Chapter = {
@@ -146,6 +167,9 @@ export const EpubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 setViewMode,
                 sidebarOpen,
                 setSidebarOpen,
+                images,
+                addImage,
+                deleteImage,
             }}
         >
             {children}
