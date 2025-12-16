@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { EpubProvider, useEpub } from './context/EpubContext';
 import { Header } from './components/Layout/Header';
 import { Sidebar } from './components/Layout/Sidebar';
@@ -7,6 +8,19 @@ import styles from './App.module.css';
 
 const AppContent = () => {
     const { sidebarOpen, setSidebarOpen } = useEpub();
+
+    useEffect(() => {
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            e.preventDefault();
+            e.returnValue = '';
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload);
+
+        return () => {
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+        };
+    }, []);
 
     return (
         <div className={styles.app}>
