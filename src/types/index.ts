@@ -53,3 +53,11 @@ export interface ImageItem {
     blob: Blob;
     url: string;
 }
+
+// EPUB Import Data
+export interface EpubImportData {
+    metadata: EpubMetadata;
+    chapters: Chapter[];
+    style: EpubStyle;
+    images: ImageItem[];
+}

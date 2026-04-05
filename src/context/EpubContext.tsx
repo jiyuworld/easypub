@@ -8,6 +8,7 @@ import type {
     PreviewSettings,
     ViewMode,
     ImageItem,
+    EpubImportData,
 } from '../types';
 
 interface EpubContextType {
@@ -50,6 +51,9 @@ interface EpubContextType {
     images: ImageItem[];
     addImage: (file: File) => void;
     deleteImage: (id: string) => void;
+
+    // Import
+    loadEpub: (data: EpubImportData) => void;
 }
 
 const EpubContext = createContext<EpubContextType | undefined>(undefined);
@@ -145,6 +149,17 @@ export const EpubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setChapters(result.map((ch, idx) => ({ ...ch, order: idx })));
     };
 
+    const loadEpub = (data: EpubImportData) => {
+        setMetadata(data.metadata);
+        setChapters(data.chapters);
+        setStyle(data.style);
+        setImages(data.images);
+        if (data.chapters.length > 0) {
+            setCurrentChapterId(data.chapters[0].id);
+        }
+        setViewMode('editor');
+    };
+
     return (
         <EpubContext.Provider
             value={{
@@ -170,6 +185,7 @@ export const EpubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 images,
                 addImage,
                 deleteImage,
+                loadEpub,
             }}
         >
             {children}

@@ -62,21 +62,18 @@ export const HR: ElementTransformer = {
   type: 'element',
 };
 
-export const IMAGE: ElementTransformer = {
+export const IMAGE: any = {
   dependencies: [ImageNode],
-  export: (node) => {
+  export: (node: LexicalNode) => {
     if (!$isImageNode(node)) {
       return null;
     }
-
-    console.log(node.getSrc());
-
-
     return `<img src="${node.getSrc()}" data-image-id="${node.getId()}" alt="${node.getAltText()}" />`;
   },
+  importRegExp: /<img\s+.*?data-image-id=["'][^"']*["'].*?>/i,
   regExp: /<img\s+.*?data-image-id=["'][^"']*["'].*?>/i,
-  replace: (parentNode, _1, _2, isImport) => {
-    const htmlString = _2[0];
+  replace: (textNode: any, match: any) => {
+    const htmlString = match[0];
 
     const imgTagSrc = htmlString.match(/src=["']([^"']+)["']/);
     const src = imgTagSrc ? imgTagSrc[1] : null;
@@ -97,15 +94,9 @@ export const IMAGE: ElementTransformer = {
       altText,
     });
 
-    if (isImport || parentNode.getNextSibling() != null) {
-      parentNode.replace(imageNode);
-    } else {
-      parentNode.insertBefore(imageNode);
-    }
-
-    imageNode.selectNext();
+    textNode.replace(imageNode);
   },
-  type: 'element',
+  type: 'text-match',
 };
 
 // Very primitive table setup

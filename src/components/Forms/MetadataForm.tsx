@@ -50,6 +50,7 @@ export const MetadataForm: React.FC = () => {
                             onChange={handleChange}
                         >
                             <option value="ko">한국어</option>
+                            <option value="en">English</option>
                         </select>
                     </div>
                 </div>

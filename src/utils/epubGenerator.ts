@@ -121,6 +121,10 @@ const generateContentOpf = (
       <dc:creator>${escapeXml(metadata.author)}</dc:creator>
       <dc:language>${metadata.language}</dc:language>
       <dc:identifier id="BookId">urn:uuid:${uuid}</dc:identifier>
+      ${metadata.publisher ? `<dc:publisher>${escapeXml(metadata.publisher)}</dc:publisher>` : ''}
+      ${metadata.description ? `<dc:description>${escapeXml(metadata.description)}</dc:description>` : ''}
+      ${metadata.isbn ? `<dc:identifier id="isbn">urn:isbn:${escapeXml(metadata.isbn)}</dc:identifier>` : ''}
+      ${metadata.publicationDate ? `<dc:date>${escapeXml(metadata.publicationDate)}</dc:date>` : ''}
       <meta property="dcterms:modified">${new Date().toISOString().split('.')[0]}Z</meta>
       ${metadata.coverImage ? '<meta name="cover" content="cover-image" />' : ''}
     </metadata>
@@ -253,7 +257,7 @@ const generateChapterHtml = async (chapter: Chapter, images: ImageItem[]) => {
   <!DOCTYPE html>
   <html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops">
     <head>
-      <title></title>
+      <title>${escapeXml(chapter.title || 'Untitled')}</title>
       <link rel="stylesheet" type="text/css" href="stylesheet.css"/>
     </head>
     <body>

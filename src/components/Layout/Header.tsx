@@ -1,7 +1,8 @@
 import React from 'react';
-import { Menu, Eye, EyeOff, Download } from 'lucide-react';
+import { Menu, Eye, EyeOff, Download, FolderOpen } from 'lucide-react';
 import { useEpub } from '../../context/EpubContext';
 import { generateEpub } from '../../utils/epubGenerator';
+import { parseEpub } from '../../utils/epubParser';
 import styles from './Header.module.css';
 
 export const Header: React.FC = () => {
@@ -14,7 +15,32 @@ export const Header: React.FC = () => {
         style,
         chapters,
         images,
+        loadEpub,
     } = useEpub();
+
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+    const handleImportClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        try {
+            const data = await parseEpub(file);
+            loadEpub(data);
+        } catch (error) {
+            console.error('Failed to import EPUB:', error);
+            alert('EPUB 불러오기에 실패했습니다.');
+        }
+
+        // Reset input
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
 
     const handleExport = async () => {
         try {
@@ -46,6 +72,17 @@ export const Header: React.FC = () => {
             </div>
 
             <div className={styles.actions}>
+                <input
+                    type="file"
+                    accept=".epub"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    style={{ display: 'none' }}
+                />
+                <button className={`${styles.button} ${styles.exportButton}`} onClick={handleImportClick}>
+                    <FolderOpen size={20} />
+                    <span className={styles.buttonText}>불러오기</span>
+                </button>
                 <button
                     className={`${styles.button} ${styles.previewButton} ${previewSettings.visible ? styles.active : ''}`}
                     onClick={togglePreview}
@@ -61,6 +98,6 @@ export const Header: React.FC = () => {
                     <span className={styles.buttonText}>EPUB</span>
                 </button>
             </div>
-        </header>
+        </header >
     );
 };
