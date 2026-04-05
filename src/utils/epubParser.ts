@@ -147,6 +147,7 @@ export const parseEpub = async (file: File): Promise<EpubImportData> => {
 
                 const title = chapterDoc.querySelector('title')?.textContent?.trim() ||
                     chapterDoc.querySelector('h1')?.textContent?.trim() ||
+                    chapterDoc.querySelector('h2')?.textContent?.trim() ||
                     `Chapter ${i + 1}`;
 
                 let markdown = '';
