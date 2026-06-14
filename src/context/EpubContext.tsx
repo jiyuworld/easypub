@@ -75,6 +75,7 @@ export const EpubProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         description: '',
         isbn: '',
         publicationDate: new Date().toISOString().split('T')[0],
+        includeToc: true,
     });
 
     const [style, setStyle] = useState<EpubStyle>({

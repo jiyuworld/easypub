@@ -8,6 +8,7 @@ export interface EpubMetadata {
     isbn?: string;
     publicationDate?: string;
     coverImage?: string;
+    includeToc: boolean;
 }
 
 // EPUB Style

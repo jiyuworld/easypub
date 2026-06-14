@@ -227,6 +227,7 @@ const parseMetadata = (opfDoc: Document): EpubMetadata => {
         publisher: getText('publisher'),
         description: getText('description'),
         isbn: opfDoc.querySelector('dc\\:identifier[id="isbn"]')?.textContent || undefined,
-        publicationDate: getText('date') || new Date().toISOString().split('T')[0]
+        publicationDate: getText('date') || new Date().toISOString().split('T')[0],
+        includeToc: true
     };
 };

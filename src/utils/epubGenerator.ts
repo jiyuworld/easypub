@@ -69,9 +69,11 @@ export const generateEpub = async (
   const tocNcx = generateTocNcx(metadata, uuid, chapters);
   oebps.file('toc.ncx', tocNcx);
 
-  // Generate nav.xhtml
-  const navXhtml = generateNavXhtml(chapters);
-  oebps.file('nav.xhtml', navXhtml);
+  // Generate nav.xhtml (only when TOC page is enabled)
+  if (metadata.includeToc) {
+    const navXhtml = generateNavXhtml(chapters);
+    oebps.file('nav.xhtml', navXhtml);
+  }
 
   // stylesheet
   const stylesheet = generateStylesheet(style);
@@ -130,7 +132,7 @@ const generateContentOpf = (
     </metadata>
     <manifest>
       <item id="toc" href="toc.ncx" media-type="application/x-dtbncx+xml"/>
-      <item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
+      ${metadata.includeToc ? `<item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>` : ''}
       <item id="style" href="stylesheet.css" media-type="text/css"/>
       ${metadata.coverImage ? `<item id="cover-image" href="images/cover.${coverExtension}" media-type="image/${coverExtension}" properties="cover-image"/>` : ''}
       ${metadata.coverImage ? `<item id="cover" href="cover.xhtml" media-type="application/xhtml+xml"/>` : ''}
@@ -142,7 +144,7 @@ const generateContentOpf = (
     </manifest>
     <spine toc="toc">
       ${metadata.coverImage ? `<itemref idref="cover"/>` : ''}
-      <itemref idref="nav"/>
+      ${metadata.includeToc ? `<itemref idref="nav"/>` : ''}
       ${chapters.map((_, i) => `<itemref idref="chapter${i + 1}"/>`).join('\n    ')}
     </spine>
   </package>`;

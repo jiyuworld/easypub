@@ -3,7 +3,7 @@ import { useEpub } from '../../context/EpubContext';
 import styles from './TableOfContents.module.css';
 
 export const TableOfContents: React.FC = () => {
-    const { chapters, setCurrentChapterId, setViewMode, style } = useEpub();
+    const { chapters, setCurrentChapterId, setViewMode, style, metadata, setMetadata } = useEpub();
 
     const handleChapterClick = (chapterId: string) => {
         setCurrentChapterId(chapterId);
@@ -19,9 +19,21 @@ export const TableOfContents: React.FC = () => {
                 padding: `${style.margin.top}% ${style.margin.right}% ${style.margin.bottom}% ${style.margin.left}%`,
             }}
         >
-            <div className={styles.notificationMessage}>
-                챕터를 추가하시면 목차가 자동으로 생성됩니다
-            </div>
+            <label className={styles.tocOptionCard} htmlFor="includeToc">
+                <input
+                    type="checkbox"
+                    id="includeToc"
+                    className={styles.tocOptionCheckbox}
+                    checked={metadata.includeToc}
+                    onChange={(e) => setMetadata({ ...metadata, includeToc: e.target.checked })}
+                />
+                <div className={styles.tocOptionBody}>
+                    <span className={styles.tocOptionTitle}>목차 페이지 자동 생성</span>
+                    <span className={styles.tocOptionDescription}>
+                        체크 시 EPUB에 챕터 목록이 담긴 목차 페이지가 포함됩니다.
+                    </span>
+                </div>
+            </label>
             <h1 className={styles.title}>목차</h1>
             <ol className={styles.tocList}>
                 {chapters.length === 0 ? (
