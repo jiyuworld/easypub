@@ -1,3 +1,6 @@
+// TOC list marker style
+export type TocListStyle = 'number' | 'bullet' | 'none';
+
 // EPUB Metadata
 export interface EpubMetadata {
     title: string;
@@ -9,6 +12,7 @@ export interface EpubMetadata {
     publicationDate?: string;
     coverImage?: string;
     includeToc: boolean;
+    tocListStyle: TocListStyle;
 }
 
 // EPUB Style

@@ -55,13 +55,60 @@
     color: var(--color-text-primary);
 }
 
+.tocStyleSection {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-lg);
+}
+
+.tocStyleSectionDisabled {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.tocStyleLabel {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+.tocStyleOptions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+}
+
+.tocStyleOption {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background-color: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    user-select: none;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-primary);
+    transition: border-color var(--transition-base), background-color var(--transition-base);
+}
+
+.tocStyleOption:hover {
+    border-color: var(--color-primary);
+}
+
+.tocStyleRadio {
+    margin: 0;
+    accent-color: var(--color-primary);
+    cursor: pointer;
+}
+
 .tocList {
-    list-style-type: none;
+    list-style-position: outside;
 }
 
 .tocItem {
-    display: flex;
-    align-items: baseline;
     padding: var(--spacing-md);
     cursor: pointer;
     border-radius: var(--radius-md);

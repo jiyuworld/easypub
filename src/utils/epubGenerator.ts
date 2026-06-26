@@ -1,6 +1,6 @@
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
-import type { EpubMetadata, EpubStyle, Chapter, ImageItem } from '../types';
+import type { EpubMetadata, EpubStyle, Chapter, ImageItem, TocListStyle } from '../types';
 import { generateStylesheet } from './styleGenerator';
 
 const generateUUID = () => {
@@ -71,7 +71,7 @@ export const generateEpub = async (
 
   // Generate nav.xhtml (only when TOC page is enabled)
   if (metadata.includeToc) {
-    const navXhtml = generateNavXhtml(chapters);
+    const navXhtml = generateNavXhtml(chapters, metadata.tocListStyle);
     oebps.file('nav.xhtml', navXhtml);
   }
 
@@ -178,7 +178,22 @@ const generateTocNcx = (
   </ncx>`;
 };
 
-const generateNavXhtml = (chapters: Chapter[]) => {
+// EPUB3 requires the toc nav to use <ol>, so we keep <ol> and only vary the
+// CSS list-style-type to render numbers, bullets, or no marker.
+const tocListStyleType = (tocListStyle: TocListStyle): string => {
+  switch (tocListStyle) {
+    case 'bullet':
+      return 'disc';
+    case 'none':
+      return 'none';
+    case 'number':
+    default:
+      return 'decimal';
+  }
+};
+
+const generateNavXhtml = (chapters: Chapter[], tocListStyle: TocListStyle) => {
+  const listStyleType = tocListStyleType(tocListStyle);
   return `<?xml version="1.0" encoding="UTF-8"?>
   <!DOCTYPE html>
   <html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops">
@@ -188,7 +203,7 @@ const generateNavXhtml = (chapters: Chapter[]) => {
     <body>
       <nav epub:type="toc" id="toc">
         <h1>목차</h1>
-        <ol>
+        <ol style="list-style-type: ${listStyleType};${listStyleType === 'none' ? ' padding-left: 0;' : ''}">
           ${chapters.map((chapter, i) => `<li><a href="chapter${i + 1}.xhtml">${escapeXml(chapter.title || `Chapter ${i + 1}`)}</a></li>`).join('\n      ')}
         </ol>
       </nav>
